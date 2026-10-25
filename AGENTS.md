@@ -153,5 +153,49 @@ npx prisma studio
 
 ## This tool
 
-Replace this section with what the tool does, its domain rules, its routes, its
-optional modules (see docs/modules/) and its documented exceptions.
+**Potluck** (working title): one party, one page. When, where, what's needed,
+who brings what. Milestones M1 to M4 (see README).
+
+### Access model (enforced server-side, `src/lib/server/parties.ts`)
+
+- **Guest**: knows `/p/<slug>` + the guest password. `POST /api/parties/[slug]/unlock`
+  checks the scrypt hash and sets an httpOnly cookie `pg_<partyId>` = `party.guestKey`.
+  Rate limited per IP per party (20 / 10 min), no lockout.
+- **Host**: holds `/h/<hostToken>`. That route sets `ph_<partyId>` = the token
+  and redirects to the clean `/p/<slug>/host`, so the token doesn't sit in the
+  address bar. A host is also a guest.
+- Anyone else gets the gate (guest page) or the standard 404 (host page, API).
+- Guest-facing selects never include `hostToken`, `guestKey` or `guestPasswordHash`.
+
+### Domain rules
+
+- Guest passwords are normalized (trim, collapse spaces, lowercase) before
+  hashing and comparing: they are said out loud.
+- Slugs are readable (`slugify(title)`), collisions get `-2`, `-3`. They are
+  identifiers, not credentials. `/p/` is still in `secretPathPrefixes` so party
+  names stay out of logs and analytics.
+- Times are stored as an instant plus the host's IANA `timeZone`, and always
+  shown in that zone.
+- `Need`, `Claim`, `Rsvp` tables exist from the init migration for M2/M3.
+  Over-claiming must be blocked in a transaction (lock the Need row).
+
+### Themes (documented exception to "never hard-code a color")
+
+- All theme data lives in `src/lib/themes.ts`, one object per theme. Adding a
+  theme = adding an object (+ an art component if it has new header art).
+- A theme sets `--theme-accent`, `--theme-on-accent`, `--theme-tint` and
+  `--theme-art` per color scheme, written into a nonce'd `<style>` by
+  `ThemeStyle`. Components use `bg-(--theme-tint)` etc. The shared tokens in
+  `globals.css` are untouched; Plain maps to the base tokens.
+- Theme colors must pass `isSafeColor` (hex or `var(--color-*)`), enforced by test.
+
+### Routes
+
+- `/` create a party, `/p/[slug]` gate or party page, `/p/[slug]/host` host view,
+  `/h/[token]` host link (sets cookie, redirects)
+- API: `POST /api/parties`, `GET /api/parties/[slug]` (guest-scoped),
+  `POST /api/parties/[slug]/unlock`
+
+### Analytics events
+
+`party_created { theme, has_address, has_notes }`, `party_unlocked { outcome }`.

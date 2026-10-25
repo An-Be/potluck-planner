@@ -27,8 +27,10 @@ const nextConfig: NextConfig = {
   async headers() {
     return [
       { source: "/:path*", headers: securityHeaders },
-      // Add every secret-link route prefix here (e.g. /p/:path* for a payer view).
-      { source: "/t/:path*", headers: privateHeaders },
+      // Party pages carry the party's details behind the guest password; host
+      // links (/h/<token>) are credentials.
+      { source: "/p/:path*", headers: privateHeaders },
+      { source: "/h/:path*", headers: privateHeaders },
       { source: "/api/:path*", headers: privateHeaders },
     ];
   },
