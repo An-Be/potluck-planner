@@ -10,15 +10,96 @@ datasource db {
   provider = "postgresql"
 }
 
-// Example resource: a secret-link "space". Rename or replace it for your tool.
-// The token is the credential: 128-bit random, base62 (see src/lib/server/token.ts).
-// Never use cuid() or uuid() as a secret; they are identifiers, not credentials.
-model Space {
-  id        String   @id @default(cuid())
-  token     String   @unique
-  title     String
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+// One party, one page. The slug is a readable identifier, not a credential:
+// the guest password does the real gating. hostToken IS a credential
+// (newToken(), 128-bit) and is never sent to guests.
+model Party {
+  id                String   @id @default(cuid())
+  slug              String   @unique
+  title             String
+  dateTime          DateTime
+  /// IANA zone the host picked the time in, so every guest sees the host's wall clock.
+  timeZone          String
+  location          String
+  address           String   @default("")
+  notes             String   @default("")
+  /// Slug of a theme in src/lib/themes.ts. A string, not an enum, so adding a
+  /// theme is a data change, not a migration.
+  theme             String
+  /// scrypt hash of the normalized guest password (src/lib/server/password.ts).
+  guestPasswordHash String
+  /// Value of the guest session cookie. Random; replaced whenever the password
+  /// changes, which signs every guest out.
+  guestKey          String
+  hostToken         String   @unique
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  needs Need[]
+  rsvps Rsvp[]
+}
+
+enum NeedCategory {
+  FOOD
+  DRINK
+  SUPPLY
+  DECOR
+  OTHER
+}
+
+model Need {
+  id             String       @id @default(cuid())
+  partyId        String
+  party          Party        @relation(fields: [partyId], references: [id], onDelete: Cascade)
+  category       NeedCategory
+  item           String
+  quantityNeeded Int
+  unit           String?
+  note           String?
+  sortOrder      Int          @default(0)
+  createdAt      DateTime     @default(now())
+
+  claims Claim[]
+
+  @@index([partyId, sortOrder])
+}
+
+// Keyed by typed name. deviceToken lets the same phone unclaim its own claim;
+// it is convenience, not access control.
+model Claim {
+  id          String   @id @default(cuid())
+  needId      String
+  need        Need     @relation(fields: [needId], references: [id], onDelete: Cascade)
+  name        String
+  quantity    Int
+  note        String?
+  deviceToken String
+  createdAt   DateTime @default(now())
+
+  @@index([needId])
+}
+
+enum RsvpStatus {
+  COMING
+  MAYBE
+  CANT
+}
+
+// One RSVP per device per party: answering again updates it instead of
+// adding a duplicate row.
+model Rsvp {
+  id          String     @id @default(cuid())
+  partyId     String
+  party       Party      @relation(fields: [partyId], references: [id], onDelete: Cascade)
+  name        String
+  status      RsvpStatus
+  partySize   Int        @default(1)
+  note        String?
+  deviceToken String
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+
+  @@unique([partyId, deviceToken])
 }
 
 // Fixed-window rate limiter (src/lib/server/rate-limit.ts). Keep this model in every tool.

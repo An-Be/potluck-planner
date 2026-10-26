@@ -1,8 +1,8 @@
 // The one file to edit when spinning up a new tool from this template.
 // Everything user-facing that names the tool reads from here.
 export const site = {
-  name: "Tool Template",
-  description: "A tiny tool. One shared link, no login.",
+  name: "Potluck",
+  description: "One page for your party: when, where, and who brings what. No login.",
   /** Shown in the footer. Keep it short. */
   tagline: "Tiny tools for keeping things fair.",
   /** Footer credit link. */
