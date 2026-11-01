@@ -12,11 +12,19 @@ export function formatPartyWhen(date: Date, timeZone: string): { day: string; ti
   return { day, time };
 }
 
-/** A maps search link for the address, or the place name when there's no address. */
-export function mapsUrl(location: string, address: string): string | null {
+/**
+ * Map search links for the address, or the place name when there's no
+ * address. Google Maps and Apple Maps, since guests are on both kinds of
+ * phone; each opens that maps app if it's installed.
+ */
+export function mapLinks(location: string, address: string): { google: string; apple: string } | null {
   const query = (address || location).trim();
   if (!query) return null;
-  return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query)}`;
+  const q = encodeURIComponent(query);
+  return {
+    google: `https://www.google.com/maps/search/?api=1&query=${q}`,
+    apple: `https://maps.apple.com/?q=${q}`,
+  };
 }
 
 /**

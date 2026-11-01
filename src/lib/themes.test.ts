@@ -42,7 +42,7 @@ describe("themes", () => {
 
   it("ships every theme from the spec", () => {
     expect(themes.map((t) => t.slug).sort()).toEqual(
-      ["cozy-cabin", "holiday-classic", "new-years-eve", "plain", "winter-wonderland"],
+      ["cozy-cabin", "holiday-classic", "new-years-eve", "plain", "thanksgiving", "winter-wonderland"],
     );
   });
 
