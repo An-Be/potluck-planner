@@ -70,8 +70,8 @@ export default async function PartyPage({ params }: PageProps<"/p/[slug]">) {
             notes={party.notes}
           />
           <section id="rsvp" className="scroll-mt-4">
-            <SectionLabel n="02">Your RSVP</SectionLabel>
-            <RsvpCard slug={party.slug} mine={mine} />
+            <SectionLabel n="02">{access.status === "host" ? "You're hosting" : "Your RSVP"}</SectionLabel>
+            <RsvpCard slug={party.slug} mine={mine} asHost={access.status === "host"} />
           </section>
           <NeedsSection n="03" slug={party.slug} needs={needs} isHost={false} />
           <GuestsSection n="04" slug={party.slug} data={guests} isHost={false} />

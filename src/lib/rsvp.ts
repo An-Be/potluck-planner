@@ -22,6 +22,8 @@ export type AttendeeView = {
   note: string | null;
   /** Decided on the server from the device cookie; the token never leaves it. */
   mine: boolean;
+  /** RSVP'd from a host device. Always COMING. */
+  isHost: boolean;
   bringing: BringingItem[];
 };
 
@@ -29,19 +31,23 @@ export type AttendeeView = {
 export type BringerView = { name: string; bringing: BringingItem[] };
 
 /**
- * Headcount = the sum of party sizes for COMING only. MAYBE is counted
- * separately so the host can plan for a range; CANT counts people, not seats.
+ * Headcount = the sum of party sizes for COMING only (hosts included, since
+ * they eat too). `hosting` is the part of `coming` that's hosts. MAYBE is
+ * counted separately so the host can plan for a range; CANT counts people.
  */
-export function headcount(attendees: readonly Pick<AttendeeView, "status" | "partySize">[]) {
+export function headcount(attendees: readonly Pick<AttendeeView, "status" | "partySize" | "isHost">[]) {
   let coming = 0;
+  let hosting = 0;
   let maybe = 0;
   let cant = 0;
   for (const a of attendees) {
-    if (a.status === "COMING") coming += a.partySize;
-    else if (a.status === "MAYBE") maybe += a.partySize;
+    if (a.status === "COMING") {
+      coming += a.partySize;
+      if (a.isHost) hosting += a.partySize;
+    } else if (a.status === "MAYBE") maybe += a.partySize;
     else cant += 1;
   }
-  return { coming, maybe, cant };
+  return { coming, hosting, maybe, cant };
 }
 
 /** "Tamales × 6, Ice", for the attendee list. */

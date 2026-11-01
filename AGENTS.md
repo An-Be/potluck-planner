@@ -187,8 +187,12 @@ who brings what. Milestones M1 to M4 (see README).
 - The guest view looks the same for everyone, host included; host-only actions
   (add/delete items, remove anyone's claim) live on `/p/[slug]/host`.
 - RSVPs are one per device per party (unique index), so answering again
-  updates. Headcount = sum of `partySize` for COMING; MAYBE is summed
-  separately; CANT counts people. The attendee list matches claims to RSVPs by
+  updates. An RSVP sent from a host device is saved with `isHost` and status
+  forced to COMING (decided by the host cookie, never the body); hosts RSVP
+  from "You're hosting" on the host page and show in their own "Hosting"
+  group. Headcount = sum of `partySize` for COMING, hosts included ("including
+  N hosting"); MAYBE is summed separately; CANT counts people. Party size shows
+  as a "Party of N" tag, never "+N" after the name. The attendee list matches claims to RSVPs by
   device, and lists claimers without an RSVP separately.
 - Host edits read the wall-clock time in the party's stored `timeZone`
   (`fromZonedInput`), not the editing device's. The slug never changes on
@@ -201,13 +205,16 @@ who brings what. Milestones M1 to M4 (see README).
 - The "Nudge the group" share text (`src/lib/share-text.ts`, host page) lists
   only open items, in category order, with what's left. It never includes the
   password (we only store its hash); the host shares that separately.
+- The address gets both Apple Maps and Google Maps links (`mapLinks`).
 - Cost splitting is a link to TabMath (`site.tabMath` in `src/config/site.ts`,
   with utm params). Potluck never handles money.
 
 ### Themes (documented exception to "never hard-code a color")
 
-- All theme data lives in `src/lib/themes.ts`, one object per theme (Holiday
-  Classic, Winter Wonderland, New Year's Eve, Cozy Cabin, Plain). Adding a
+- All theme data lives in `src/lib/themes.ts`, one object per theme
+  (Thanksgiving, Holiday Classic, Winter Wonderland, New Year's Eve, Cozy
+  Cabin, Plain), in the order the picker shows them. Holiday Classic stays the
+  default for new parties. Adding a
   theme = adding an object (+ an art component in `HeaderArt` if it has new art).
 - A theme sets `--theme-accent`, `--theme-on-accent`, `--theme-tint` and
   `--theme-art` per color scheme. Components use `bg-(--theme-tint)` etc.
@@ -246,6 +253,6 @@ who brings what. Milestones M1 to M4 (see README).
 `party_created { theme, has_address, has_notes }`, `party_unlocked { outcome }`,
 `need_added { category, quantity, has_unit, has_note }`, `need_deleted { had_claims }`,
 `item_claimed { outcome, quantity?, filled? }`, `claim_removed { by }`,
-`rsvp_sent { status, party_size, changed }`, `rsvp_removed { by }`,
+`rsvp_sent { status, party_size, changed, host }`, `rsvp_removed { by }`,
 `party_edited { theme_changed, time_changed, theme }`, `password_changed`,
 `calendar_downloaded`, `share_text_used { method, items_left }`, `tabmath_clicked { from }`.

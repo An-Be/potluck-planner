@@ -4,15 +4,18 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { api } from "@/lib/api-client";
-import { formatBringing, headcount, type AttendeeView, type BringerView, type RsvpStatus } from "@/lib/rsvp";
+import { formatBringing, headcount, type AttendeeView, type BringerView } from "@/lib/rsvp";
 import { toast } from "@/lib/toast";
 import { track } from "@/lib/track";
+import { AttendeeMeta } from "./attendee-meta";
 import { ConfirmDialog, type ConfirmRequest } from "./confirm-dialog";
 
-const groups: { status: RsvpStatus; title: string }[] = [
-  { status: "COMING", title: "Coming" },
-  { status: "MAYBE", title: "Maybe" },
-  { status: "CANT", title: "Can't make it" },
+// Hosts get their own group at the top instead of a "+1" among the guests.
+const groups: { key: string; title: string; match: (a: AttendeeView) => boolean; countPeople: boolean }[] = [
+  { key: "HOST", title: "Hosting", match: (a) => a.isHost, countPeople: true },
+  { key: "COMING", title: "Coming", match: (a) => !a.isHost && a.status === "COMING", countPeople: true },
+  { key: "MAYBE", title: "Maybe", match: (a) => !a.isHost && a.status === "MAYBE", countPeople: true },
+  { key: "CANT", title: "Can't make it", match: (a) => !a.isHost && a.status === "CANT", countPeople: false },
 ];
 
 /** Headcount, then who's coming and what each person is bringing. */
@@ -65,29 +68,30 @@ export function AttendeeList({
       <div className="flex flex-col gap-1">
         <p className="display text-3xl">{count.coming} coming</p>
         <p className="text-xs text-mute">
-          {[count.maybe ? `${count.maybe} maybe` : null, count.cant ? `${count.cant} can't make it` : null]
+          {[
+            count.hosting ? `including ${count.hosting} hosting` : null,
+            count.maybe ? `${count.maybe} maybe` : null,
+            count.cant ? `${count.cant} can't make it` : null,
+          ]
             .filter(Boolean)
             .join(" · ") || "Headcount counts everyone in each group."}
         </p>
       </div>
 
-      {groups.map(({ status, title }) => {
-        const people = attendees.filter((a) => a.status === status);
+      {groups.map(({ key, title, match, countPeople }) => {
+        const people = attendees.filter(match);
         if (people.length === 0) return null;
         return (
-          <div key={status}>
+          <div key={key}>
             <h3 className="label mb-2 text-mute">
-              {title} · {status === "CANT" ? people.length : people.reduce((n, a) => n + a.partySize, 0)}
+              {title} · {countPeople ? people.reduce((n, a) => n + a.partySize, 0) : people.length}
             </h3>
             <ul className="border border-ink bg-paper">
               {people.map((a) => (
                 <li key={a.id} className="flex items-start justify-between gap-3 border-b border-ink p-4 last:border-b-0">
                   <div className="flex min-w-0 flex-col gap-1">
-                    <p className="font-display text-lg font-medium break-words">
-                      {a.name}
-                      {status !== "CANT" && a.partySize > 1 ? <span className="text-mute"> +{a.partySize - 1}</span> : null}
-                      {a.mine ? <span className="label ml-2 text-mute">You</span> : null}
-                    </p>
+                    <p className="font-display text-lg font-medium break-words">{a.name}</p>
+                    <AttendeeMeta attendee={a} />
                     {a.bringing.length > 0 ? (
                       <p className="text-sm break-words">
                         <span className="text-mute">Bringing </span>
@@ -96,7 +100,7 @@ export function AttendeeList({
                     ) : null}
                     {a.note ? <p className="text-xs break-words whitespace-pre-line text-mute">{a.note}</p> : null}
                   </div>
-                  {isHost ? (
+                  {isHost && !a.isHost ? (
                     <Button variant="ghost" size="sm" className="h-auto shrink-0 px-0" disabled={pending} onClick={() => askRemove(a)}>
                       Remove
                     </Button>

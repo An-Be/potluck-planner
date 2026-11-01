@@ -96,6 +96,9 @@ model Rsvp {
   partySize   Int        @default(1)
   note        String?
   deviceToken String
+  /// Set by the server when the RSVP comes from a host device (never from the
+  /// request body). Hosts are always COMING and show as "Hosting".
+  isHost      Boolean    @default(false)
   createdAt   DateTime   @default(now())
   updatedAt   DateTime   @updatedAt
 

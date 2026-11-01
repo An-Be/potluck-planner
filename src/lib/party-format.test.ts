@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { formatPartyWhen, fromZonedInput, localInputToIso, mapsUrl, toZonedInput } from "./party-format";
+import { formatPartyWhen, fromZonedInput, localInputToIso, mapLinks, toZonedInput } from "./party-format";
 
 describe("formatPartyWhen", () => {
   it("formats in the party's time zone, not the server's", () => {
@@ -9,15 +9,16 @@ describe("formatPartyWhen", () => {
   });
 });
 
-describe("mapsUrl", () => {
-  it("prefers the address and encodes it", () => {
-    expect(mapsUrl("Andrea's", "123 N State St, Chicago")).toBe(
-      "https://www.google.com/maps/search/?api=1&query=123%20N%20State%20St%2C%20Chicago",
-    );
+describe("mapLinks", () => {
+  it("prefers the address and encodes it for both apps", () => {
+    expect(mapLinks("Andrea's", "123 N State St, Chicago")).toEqual({
+      google: "https://www.google.com/maps/search/?api=1&query=123%20N%20State%20St%2C%20Chicago",
+      apple: "https://maps.apple.com/?q=123%20N%20State%20St%2C%20Chicago",
+    });
   });
   it("falls back to the place name, or nothing", () => {
-    expect(mapsUrl("Millennium Park", "")).toContain("Millennium%20Park");
-    expect(mapsUrl("  ", "")).toBeNull();
+    expect(mapLinks("Millennium Park", "")?.apple).toBe("https://maps.apple.com/?q=Millennium%20Park");
+    expect(mapLinks("  ", "")).toBeNull();
   });
 });
 

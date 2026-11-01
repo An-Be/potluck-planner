@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { SectionLabel } from "@/components/ui/section-label";
-import { formatPartyWhen, mapsUrl } from "@/lib/party-format";
+import { formatPartyWhen, mapLinks } from "@/lib/party-format";
 import type { PartyDetails as Details } from "@/lib/server/parties";
 import { TrackedLink } from "./tracked-link";
 
@@ -18,7 +18,7 @@ export function PartyDetails({
   notes,
 }: Props & { n?: string; slug: string; editHref?: string }) {
   const when = formatPartyWhen(dateTime, timeZone);
-  const map = mapsUrl(location, address);
+  const maps = mapLinks(location, address);
   return (
     <section>
       <SectionLabel
@@ -54,10 +54,23 @@ export function PartyDetails({
           <dt className="label text-mute">Where</dt>
           <dd className="display break-words text-2xl">{location}</dd>
           {address ? <dd className="break-words text-sm">{address}</dd> : null}
-          {map ? (
-            <dd className="mt-1">
-              <a href={map} target="_blank" rel="noopener noreferrer" className="label text-(--theme-accent) underline underline-offset-4">
-                Open in maps
+          {maps ? (
+            <dd className="mt-1 flex flex-wrap gap-x-5 gap-y-2">
+              <a
+                href={maps.apple}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="label text-(--theme-accent) underline underline-offset-4"
+              >
+                Apple Maps
+              </a>
+              <a
+                href={maps.google}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="label text-(--theme-accent) underline underline-offset-4"
+              >
+                Google Maps
               </a>
             </dd>
           ) : null}

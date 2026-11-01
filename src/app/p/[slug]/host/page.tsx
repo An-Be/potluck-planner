@@ -7,11 +7,13 @@ import { HostLinks } from "@/components/party/host-links";
 import { NeedsSection } from "@/components/party/needs-section";
 import { PartyDetails } from "@/components/party/party-details";
 import { PartyTitle } from "@/components/party/party-title";
+import { RsvpCard } from "@/components/party/rsvp-card";
 import { ShareNeeded } from "@/components/party/share-needed";
 import { SplitCosts } from "@/components/party/split-costs";
 import { ThemeFrame } from "@/components/party/theme-frame";
 import { SiteFooter } from "@/components/site/site-footer";
 import { SiteHeader } from "@/components/site/site-header";
+import { SectionLabel } from "@/components/ui/section-label";
 import { Shell } from "@/components/ui/shell";
 import { site } from "@/config/site";
 import { formatPartyWhen } from "@/lib/party-format";
@@ -32,6 +34,7 @@ export default async function HostPage({ params }: PageProps<"/p/[slug]/host">) 
   const device = await readDeviceToken();
   const [needs, guests] = await Promise.all([listNeeds(party.id, device), listAttendees(party.id, device)]);
   const when = formatPartyWhen(party.dateTime, party.timeZone);
+  const mine = guests.attendees.find((a) => a.mine) ?? null;
 
   return (
     <ThemeFrame
@@ -42,13 +45,17 @@ export default async function HostPage({ params }: PageProps<"/p/[slug]/host">) 
         <main className="flex flex-1 flex-col gap-10 py-10">
           <PartyTitle title={party.title} theme={party.theme} kicker="Host view" />
           <HostLinks slug={party.slug} hostToken={hostToken} />
-          <GuestsSection n="03" slug={party.slug} data={guests} isHost />
-          <NeedsSection n="04" slug={party.slug} needs={needs} isHost>
+          <section id="rsvp" className="scroll-mt-4">
+            <SectionLabel n="03">You&apos;re hosting</SectionLabel>
+            <RsvpCard slug={party.slug} mine={mine} asHost />
+          </section>
+          <GuestsSection n="04" slug={party.slug} data={guests} isHost />
+          <NeedsSection n="05" slug={party.slug} needs={needs} isHost>
             <AddNeedForm slug={party.slug} />
           </NeedsSection>
-          <ShareNeeded n="05" slug={party.slug} title={party.title} day={when.day} time={when.time} needs={needs} />
+          <ShareNeeded n="06" slug={party.slug} title={party.title} day={when.day} time={when.time} needs={needs} />
           <PartyDetails
-            n="06"
+            n="07"
             slug={party.slug}
             editHref={`/p/${party.slug}/host/edit`}
             dateTime={party.dateTime}
@@ -57,7 +64,7 @@ export default async function HostPage({ params }: PageProps<"/p/[slug]/host">) 
             address={party.address}
             notes={party.notes}
           />
-          <SplitCosts n="07" isHost />
+          <SplitCosts n="08" isHost />
         </main>
         <SiteFooter />
       </Shell>

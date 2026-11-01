@@ -7,11 +7,19 @@ import { db } from "./db";
  * One RSVP per device per party (unique index on partyId + deviceToken), so
  * answering again updates the same row instead of adding "Andrea" twice.
  */
-export async function upsertRsvp(partyId: string, deviceToken: string, input: RsvpInput): Promise<{ id: string }> {
+export async function upsertRsvp(
+  partyId: string,
+  deviceToken: string,
+  input: RsvpInput,
+  isHost: boolean,
+): Promise<{ id: string }> {
+  // Hosts are always coming; whether this is a host is the server's call
+  // (host cookie), never the request body's.
+  const data = { ...input, status: isHost ? ("COMING" as const) : input.status, isHost };
   return db.rsvp.upsert({
     where: { partyId_deviceToken: { partyId, deviceToken } },
-    create: { ...input, partyId, deviceToken },
-    update: input,
+    create: { ...data, partyId, deviceToken },
+    update: data,
     select: { id: true },
   });
 }
@@ -47,7 +55,7 @@ export async function listAttendees(partyId: string, deviceToken: string | null)
     db.rsvp.findMany({
       where: { partyId },
       orderBy: { createdAt: "asc" },
-      select: { id: true, name: true, status: true, partySize: true, note: true, deviceToken: true },
+      select: { id: true, name: true, status: true, partySize: true, note: true, isHost: true, deviceToken: true },
     }),
     db.claim.findMany({
       where: { need: { partyId } },

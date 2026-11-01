@@ -17,7 +17,7 @@ export type ThemeColors = {
   art: string;
 };
 
-export type HeaderArt = "none" | "garland" | "snowflakes" | "confetti" | "knit";
+export type HeaderArt = "none" | "garland" | "snowflakes" | "confetti" | "knit" | "leaves";
 
 export type Theme = {
   slug: string;
@@ -55,6 +55,15 @@ const base: ThemeColors = {
 };
 
 export const themes = [
+  {
+    slug: "thanksgiving",
+    name: "Thanksgiving",
+    blurb: "Rust and gold, falling leaves, a warm wheat tint.",
+    emoji: "🦃",
+    art: "leaves",
+    light: { accent: "#a8401c", onAccent: "#ffffff", tint: "#f2e4c9", art: "#c4881c" },
+    dark: { accent: "#f07a48", onAccent: "#0b0b0b", tint: "#1c140b", art: "#e0a83c" },
+  },
   {
     slug: "holiday-classic",
     name: "Holiday Classic",
