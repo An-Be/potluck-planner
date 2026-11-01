@@ -176,8 +176,17 @@ who brings what. Milestones M1 to M4 (see README).
   names stay out of logs and analytics.
 - Times are stored as an instant plus the host's IANA `timeZone`, and always
   shown in that zone.
-- `Need`, `Claim`, `Rsvp` tables exist from the init migration for M2/M3.
-  Over-claiming must be blocked in a transaction (lock the Need row).
+- Claims never over-claim: `claimNeed` locks the Need row
+  (`SELECT ... FOR UPDATE`) in a transaction, re-sums claims, then inserts.
+  Tested with 10 concurrent claims for the last items.
+- "Mine" is a per-device httpOnly cookie `pdev` (`src/lib/server/device.ts`),
+  set on first claim. It lets a phone remove its own claims; it is not access
+  control and never leaves the server (`listNeeds` turns it into `mine`).
+- Progress counts items, not quantities: an item is covered when claims reach
+  `quantityNeeded`. Max 100 needs per party.
+- The guest view looks the same for everyone, host included; host-only actions
+  (add/delete items, remove anyone's claim) live on `/p/[slug]/host`.
+- `Rsvp` table exists from the init migration for M3.
 
 ### Themes (documented exception to "never hard-code a color")
 
@@ -195,7 +204,14 @@ who brings what. Milestones M1 to M4 (see README).
   `/h/[token]` host link (sets cookie, redirects)
 - API: `POST /api/parties`, `GET /api/parties/[slug]` (guest-scoped),
   `POST /api/parties/[slug]/unlock`
+- Needs (host only): `POST /api/parties/[slug]/needs`,
+  `DELETE /api/parties/[slug]/needs/[needId]` (cascades its claims)
+- Claims (guest or host): `POST /api/parties/[slug]/claims` (409 with
+  `remaining` when someone got there first), `DELETE /api/parties/[slug]/claims/[claimId]`
+  (own device, or any claim for the host)
 
 ### Analytics events
 
-`party_created { theme, has_address, has_notes }`, `party_unlocked { outcome }`.
+`party_created { theme, has_address, has_notes }`, `party_unlocked { outcome }`,
+`need_added { category, quantity, has_unit, has_note }`, `need_deleted { had_claims }`,
+`item_claimed { outcome, quantity?, filled? }`, `claim_removed { by }`.

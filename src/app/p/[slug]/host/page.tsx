@@ -1,7 +1,9 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { AddNeedForm } from "@/components/party/add-need-form";
 import { HostLinks } from "@/components/party/host-links";
+import { NeedsSection } from "@/components/party/needs-section";
 import { PartyDetails } from "@/components/party/party-details";
 import { PartyTitle } from "@/components/party/party-title";
 import { ThemeFrame } from "@/components/party/theme-frame";
@@ -9,6 +11,8 @@ import { SiteFooter } from "@/components/site/site-footer";
 import { SiteHeader } from "@/components/site/site-header";
 import { Shell } from "@/components/ui/shell";
 import { site } from "@/config/site";
+import { readDeviceToken } from "@/lib/server/device";
+import { listNeeds } from "@/lib/server/needs";
 import { getPartyAccess } from "@/lib/server/parties";
 
 export const metadata: Metadata = { title: site.name };
@@ -20,6 +24,7 @@ export default async function HostPage({ params }: PageProps<"/p/[slug]/host">) 
   const access = await getPartyAccess(slug);
   if (access.status !== "host") notFound();
   const { party, hostToken } = access;
+  const needs = await listNeeds(party.id, await readDeviceToken());
 
   return (
     <ThemeFrame
@@ -30,8 +35,11 @@ export default async function HostPage({ params }: PageProps<"/p/[slug]/host">) 
         <main className="flex flex-1 flex-col gap-10 py-10">
           <PartyTitle title={party.title} theme={party.theme} kicker="Host view" />
           <HostLinks slug={party.slug} hostToken={hostToken} />
+          <NeedsSection n="03" slug={party.slug} needs={needs} isHost>
+            <AddNeedForm slug={party.slug} />
+          </NeedsSection>
           <PartyDetails
-            n="03"
+            n="04"
             dateTime={party.dateTime}
             timeZone={party.timeZone}
             location={party.location}
