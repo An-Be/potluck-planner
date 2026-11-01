@@ -7,6 +7,7 @@ import { Field } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { api } from "@/lib/api-client";
 import { track } from "@/lib/track";
+import { accentButton } from "./accent-classes";
 
 /** One question, one field. The page itself says nothing about the party until unlocked. */
 export function PasswordGate({ slug }: { slug: string }) {
@@ -54,7 +55,7 @@ export function PasswordGate({ slug }: { slug: string }) {
         size="lg"
         block
         disabled={pending || !password.trim()}
-        className="border-(--theme-accent) bg-(--theme-accent) text-(--theme-on-accent) hover:border-(--theme-accent) hover:bg-(--theme-accent) hover:opacity-85"
+        className={accentButton}
       >
         {pending ? "Checking" : "Let me in"}
       </Button>

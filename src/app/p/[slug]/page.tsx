@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { NeedsSection } from "@/components/party/needs-section";
 import { PartyDetails } from "@/components/party/party-details";
 import { PartyTitle } from "@/components/party/party-title";
 import { PasswordGate } from "@/components/party/password-gate";
@@ -9,6 +10,8 @@ import { SiteFooter } from "@/components/site/site-footer";
 import { SiteHeader } from "@/components/site/site-header";
 import { Shell } from "@/components/ui/shell";
 import { site } from "@/config/site";
+import { readDeviceToken } from "@/lib/server/device";
+import { listNeeds } from "@/lib/server/needs";
 import { getPartyAccess } from "@/lib/server/parties";
 
 // The title never includes the party name, so link previews and browser
@@ -38,6 +41,7 @@ export default async function PartyPage({ params }: PageProps<"/p/[slug]">) {
   }
 
   const { party } = access;
+  const needs = await listNeeds(party.id, await readDeviceToken());
   const header =
     access.status === "host" ? (
       <SiteHeader right={<Link href={`/p/${party.slug}/host`}>Host view</Link>} />
@@ -57,6 +61,7 @@ export default async function PartyPage({ params }: PageProps<"/p/[slug]">) {
             address={party.address}
             notes={party.notes}
           />
+          <NeedsSection n="02" slug={party.slug} needs={needs} isHost={false} />
         </main>
         <SiteFooter />
       </Shell>

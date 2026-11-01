@@ -81,6 +81,17 @@ export async function getPartyAccess(slug: unknown): Promise<PartyAccess> {
   return { status: "locked", party: { slug: row.slug, theme: row.theme } };
 }
 
+/**
+ * For API routes: the party id if the caller has unlocked it (guest) or holds
+ * the host cookie, else null (the route answers 404 either way).
+ */
+export async function getMember(slug: unknown): Promise<{ partyId: string; isHost: boolean } | null> {
+  const access = await getPartyAccess(slug);
+  if (access.status === "host") return { partyId: access.party.id, isHost: true };
+  if (access.status === "guest") return { partyId: access.party.id, isHost: false };
+  return null;
+}
+
 export async function getPasswordCheck(slug: unknown) {
   if (!isWellFormedSlug(slug)) return null;
   return db.party.findUnique({ where: { slug }, select: { id: true, guestKey: true, guestPasswordHash: true } });
