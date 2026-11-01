@@ -2,19 +2,21 @@ import Link from "next/link";
 import { SectionLabel } from "@/components/ui/section-label";
 import { formatPartyWhen, mapsUrl } from "@/lib/party-format";
 import type { PartyDetails as Details } from "@/lib/server/parties";
+import { TrackedLink } from "./tracked-link";
 
 type Props = Pick<Details, "dateTime" | "timeZone" | "location" | "address" | "notes">;
 
 /** When, where, notes: the questions nobody should have to text the host about. */
 export function PartyDetails({
   n = "01",
+  slug,
   editHref,
   dateTime,
   timeZone,
   location,
   address,
   notes,
-}: Props & { n?: string; editHref?: string }) {
+}: Props & { n?: string; slug: string; editHref?: string }) {
   const when = formatPartyWhen(dateTime, timeZone);
   const map = mapsUrl(location, address);
   return (
@@ -36,6 +38,17 @@ export function PartyDetails({
           <dt className="label text-mute">When</dt>
           <dd className="display text-2xl">{when.day}</dd>
           <dd className="text-sm">{when.time}</dd>
+          <dd className="mt-1">
+            {/* A file download, so a plain <a>: next/link would try a client-side navigation. */}
+            <TrackedLink
+              href={`/api/parties/${slug}/calendar.ics`}
+              download="party.ics"
+              event="calendar_downloaded"
+              className="label text-(--theme-accent) underline underline-offset-4"
+            >
+              Add to calendar
+            </TrackedLink>
+          </dd>
         </div>
         <div className="flex flex-col gap-1 p-4">
           <dt className="label text-mute">Where</dt>

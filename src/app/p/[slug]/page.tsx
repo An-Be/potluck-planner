@@ -7,6 +7,7 @@ import { PartyDetails } from "@/components/party/party-details";
 import { PartyTitle } from "@/components/party/party-title";
 import { PasswordGate } from "@/components/party/password-gate";
 import { RsvpCard } from "@/components/party/rsvp-card";
+import { SplitCosts } from "@/components/party/split-costs";
 import { ThemeFrame } from "@/components/party/theme-frame";
 import { SiteFooter } from "@/components/site/site-footer";
 import { SiteHeader } from "@/components/site/site-header";
@@ -61,6 +62,7 @@ export default async function PartyPage({ params }: PageProps<"/p/[slug]">) {
         <main className="flex flex-1 flex-col gap-10 py-10">
           <PartyTitle title={party.title} theme={party.theme} kicker="You're invited" />
           <PartyDetails
+            slug={party.slug}
             dateTime={party.dateTime}
             timeZone={party.timeZone}
             location={party.location}
@@ -73,6 +75,7 @@ export default async function PartyPage({ params }: PageProps<"/p/[slug]">) {
           </section>
           <NeedsSection n="03" slug={party.slug} needs={needs} isHost={false} />
           <GuestsSection n="04" slug={party.slug} data={guests} isHost={false} />
+          <SplitCosts n="05" isHost={false} />
         </main>
         <SiteFooter />
       </Shell>
