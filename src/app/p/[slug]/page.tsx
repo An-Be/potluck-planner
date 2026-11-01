@@ -1,18 +1,22 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { GuestsSection } from "@/components/party/guests-section";
 import { NeedsSection } from "@/components/party/needs-section";
 import { PartyDetails } from "@/components/party/party-details";
 import { PartyTitle } from "@/components/party/party-title";
 import { PasswordGate } from "@/components/party/password-gate";
+import { RsvpCard } from "@/components/party/rsvp-card";
 import { ThemeFrame } from "@/components/party/theme-frame";
 import { SiteFooter } from "@/components/site/site-footer";
 import { SiteHeader } from "@/components/site/site-header";
+import { SectionLabel } from "@/components/ui/section-label";
 import { Shell } from "@/components/ui/shell";
 import { site } from "@/config/site";
 import { readDeviceToken } from "@/lib/server/device";
 import { listNeeds } from "@/lib/server/needs";
 import { getPartyAccess } from "@/lib/server/parties";
+import { listAttendees } from "@/lib/server/rsvps";
 
 // The title never includes the party name, so link previews and browser
 // history don't leak it.
@@ -41,7 +45,9 @@ export default async function PartyPage({ params }: PageProps<"/p/[slug]">) {
   }
 
   const { party } = access;
-  const needs = await listNeeds(party.id, await readDeviceToken());
+  const device = await readDeviceToken();
+  const [needs, guests] = await Promise.all([listNeeds(party.id, device), listAttendees(party.id, device)]);
+  const mine = guests.attendees.find((a) => a.mine) ?? null;
   const header =
     access.status === "host" ? (
       <SiteHeader right={<Link href={`/p/${party.slug}/host`}>Host view</Link>} />
@@ -61,7 +67,12 @@ export default async function PartyPage({ params }: PageProps<"/p/[slug]">) {
             address={party.address}
             notes={party.notes}
           />
-          <NeedsSection n="02" slug={party.slug} needs={needs} isHost={false} />
+          <section id="rsvp" className="scroll-mt-4">
+            <SectionLabel n="02">Your RSVP</SectionLabel>
+            <RsvpCard slug={party.slug} mine={mine} />
+          </section>
+          <NeedsSection n="03" slug={party.slug} needs={needs} isHost={false} />
+          <GuestsSection n="04" slug={party.slug} data={guests} isHost={false} />
         </main>
         <SiteFooter />
       </Shell>

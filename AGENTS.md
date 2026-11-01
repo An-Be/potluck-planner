@@ -186,22 +186,39 @@ who brings what. Milestones M1 to M4 (see README).
   `quantityNeeded`. Max 100 needs per party.
 - The guest view looks the same for everyone, host included; host-only actions
   (add/delete items, remove anyone's claim) live on `/p/[slug]/host`.
-- `Rsvp` table exists from the init migration for M3.
+- RSVPs are one per device per party (unique index), so answering again
+  updates. Headcount = sum of `partySize` for COMING; MAYBE is summed
+  separately; CANT counts people. The attendee list matches claims to RSVPs by
+  device, and lists claimers without an RSVP separately.
+- Host edits read the wall-clock time in the party's stored `timeZone`
+  (`fromZonedInput`), not the editing device's. The slug never changes on
+  edit, so shared links keep working.
+- Changing the guest password also replaces `guestKey`, signing every guest
+  out. The host cookie is separate and stays valid.
 
 ### Themes (documented exception to "never hard-code a color")
 
-- All theme data lives in `src/lib/themes.ts`, one object per theme. Adding a
-  theme = adding an object (+ an art component if it has new header art).
+- All theme data lives in `src/lib/themes.ts`, one object per theme (Holiday
+  Classic, Winter Wonderland, New Year's Eve, Cozy Cabin, Plain). Adding a
+  theme = adding an object (+ an art component in `HeaderArt` if it has new art).
 - A theme sets `--theme-accent`, `--theme-on-accent`, `--theme-tint` and
-  `--theme-art` per color scheme, written into a nonce'd `<style>` by
-  `ThemeStyle`. Components use `bg-(--theme-tint)` etc. The shared tokens in
-  `globals.css` are untouched; Plain maps to the base tokens.
+  `--theme-art` per color scheme. Components use `bg-(--theme-tint)` etc.
+  The shared tokens in `globals.css` are untouched; Plain maps to the base tokens.
+- `scheme: "dark"` (New Year's Eve) re-points the base tokens to their dark
+  values inside that theme's scope only, so the page is dark in light mode too.
+  A test keeps that copy in sync with `globals.css`.
+- All theme CSS is served as one same-origin stylesheet, `/themes.css`
+  (`src/app/themes.css/route.ts`, static, content-hashed URL from the root
+  layout). **Don't render theme CSS in a `<style>` tag**: a client-side
+  navigation carries a new request nonce the page's CSP doesn't know, so the
+  style gets blocked and the theme disappears.
 - Theme colors must pass `isSafeColor` (hex or `var(--color-*)`), enforced by test.
 
 ### Routes
 
 - `/` create a party, `/p/[slug]` gate or party page, `/p/[slug]/host` host view,
-  `/h/[token]` host link (sets cookie, redirects)
+  `/p/[slug]/host/edit` edit details, theme and guest password,
+  `/h/[token]` host link (sets cookie, redirects), `/themes.css` theme sheet
 - API: `POST /api/parties`, `GET /api/parties/[slug]` (guest-scoped),
   `POST /api/parties/[slug]/unlock`
 - Needs (host only): `POST /api/parties/[slug]/needs`,
@@ -209,9 +226,15 @@ who brings what. Milestones M1 to M4 (see README).
 - Claims (guest or host): `POST /api/parties/[slug]/claims` (409 with
   `remaining` when someone got there first), `DELETE /api/parties/[slug]/claims/[claimId]`
   (own device, or any claim for the host)
+- RSVPs (guest or host): `POST /api/parties/[slug]/rsvps` (upsert per device),
+  `DELETE /api/parties/[slug]/rsvps/[rsvpId]` (own device, or any for the host)
+- Host: `PATCH /api/parties/[slug]/host` (details + theme),
+  `POST /api/parties/[slug]/host/password` (new password, signs guests out)
 
 ### Analytics events
 
 `party_created { theme, has_address, has_notes }`, `party_unlocked { outcome }`,
 `need_added { category, quantity, has_unit, has_note }`, `need_deleted { had_claims }`,
-`item_claimed { outcome, quantity?, filled? }`, `claim_removed { by }`.
+`item_claimed { outcome, quantity?, filled? }`, `claim_removed { by }`,
+`rsvp_sent { status, party_size, changed }`, `rsvp_removed { by }`,
+`party_edited { theme_changed, time_changed, theme }`, `password_changed`.

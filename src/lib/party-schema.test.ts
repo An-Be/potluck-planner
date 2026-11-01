@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { createPartySchema, normalizePassword, unlockSchema } from "./party-schema";
+import { changePasswordSchema, createPartySchema, normalizePassword, unlockSchema, updatePartySchema } from "./party-schema";
 
 const valid = {
   title: "  Holiday   Party ",
@@ -64,5 +64,36 @@ describe("unlockSchema", () => {
   it("normalizes the guess the same way as the stored password", () => {
     const r = unlockSchema.safeParse({ password: " SnowMan" });
     expect(r.success && r.data.password).toBe("snowman");
+  });
+});
+
+describe("updatePartySchema", () => {
+  const edit = {
+    title: " New name ",
+    localDateTime: "2026-12-20T18:00",
+    location: "Casa",
+    address: "",
+    notes: "",
+    theme: "winter-wonderland",
+  };
+  it("accepts an edit with wall-clock time", () => {
+    const r = updatePartySchema.safeParse(edit);
+    expect(r.success).toBe(true);
+    if (r.success) expect(r.data.title).toBe("New name");
+  });
+  it("rejects an ISO instant or a missing theme", () => {
+    expect(updatePartySchema.safeParse({ ...edit, localDateTime: "2026-12-20T18:00:00Z" }).success).toBe(false);
+    expect(updatePartySchema.safeParse({ ...edit, theme: undefined }).success).toBe(false);
+  });
+  it("can't change slug, host token or password", () => {
+    const r = updatePartySchema.safeParse({ ...edit, slug: "mine", hostToken: "x", guestPassword: "y" });
+    expect(r.success && Object.keys(r.data).sort()).toEqual(["address", "localDateTime", "location", "notes", "theme", "title"]);
+  });
+});
+
+describe("changePasswordSchema", () => {
+  it("normalizes like the create form", () => {
+    const r = changePasswordSchema.safeParse({ guestPassword: " Reindeer " });
+    expect(r.success && r.data.guestPassword).toBe("reindeer");
   });
 });

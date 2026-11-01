@@ -64,6 +64,26 @@ export const createPartySchema = z.object({
 
 export type CreatePartyInput = z.infer<typeof createPartySchema>;
 
+/**
+ * Host edit. The time arrives as wall clock ("YYYY-MM-DDTHH:mm") and is read
+ * in the party's own time zone on the server, so editing from another city
+ * doesn't move the party. The slug never changes, so shared links keep working.
+ */
+export const updatePartySchema = z.object({
+  title: createPartySchema.shape.title,
+  localDateTime: z
+    .string({ error: "Pick a date and time." })
+    .regex(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/, "Pick a date and time."),
+  location: createPartySchema.shape.location,
+  address: createPartySchema.shape.address,
+  notes: createPartySchema.shape.notes,
+  theme: z.enum(themeSlugs, { error: "Pick a theme." }),
+});
+
+export type UpdatePartyInput = z.infer<typeof updatePartySchema>;
+
+export const changePasswordSchema = z.object({ guestPassword });
+
 export const unlockSchema = z.object({
   password: z.string({ error: "Enter the password." }).max(200, "That's not it.").transform(normalizePassword),
 });

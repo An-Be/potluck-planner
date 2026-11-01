@@ -7,8 +7,8 @@ and one easy password. No accounts. Built on
 ## Status
 
 - **M1** (done): create a party, host link, guest password gate, Holiday Classic + Plain themes
-- **M2** (this): needs list, claim/unclaim, still-needed progress
-- **M3**: RSVP, attendee list, host edit mode, remaining themes
+- **M2** (done): needs list, claim/unclaim, still-needed progress
+- **M3** (this): RSVP, attendee list, host edit mode, remaining themes
 - **M4**: .ics download, share text, TabMath link-out
 
 ## Run it

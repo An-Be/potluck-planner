@@ -1,7 +1,8 @@
 import "server-only";
 import { cookies } from "next/headers";
 import { Prisma } from "@/lib/generated/prisma/client";
-import type { CreatePartyInput } from "@/lib/party-schema";
+import { fromZonedInput } from "@/lib/party-format";
+import type { CreatePartyInput, UpdatePartyInput } from "@/lib/party-schema";
 import { SLUG_MAX, nextFreeSlug, slugify } from "@/lib/slug";
 import { db } from "./db";
 import { hashPassword, safeEqual } from "./password";
@@ -141,4 +142,29 @@ export async function createParty(input: CreatePartyInput): Promise<{ id: string
     }
   }
   throw new Error("Could not find a free slug.");
+}
+
+/**
+ * Host edit of details and theme. The wall-clock time is read in the party's
+ * stored time zone. The slug is kept, so every shared link still works.
+ * Returns false for a time that can't be read.
+ */
+export async function updateParty(partyId: string, timeZone: string, input: UpdatePartyInput): Promise<boolean> {
+  const { localDateTime, ...rest } = input;
+  const dateTime = fromZonedInput(localDateTime, timeZone);
+  if (!dateTime) return false;
+  await db.party.update({ where: { id: partyId }, data: { ...rest, dateTime } });
+  return true;
+}
+
+/**
+ * New guest password. Also replaces guestKey, which signs every guest out:
+ * the old password stops working AND anyone already in has to enter the new
+ * one. The host stays signed in (host cookie is separate).
+ */
+export async function changeGuestPassword(partyId: string, guestPassword: string): Promise<void> {
+  await db.party.update({
+    where: { id: partyId },
+    data: { guestPasswordHash: await hashPassword(guestPassword), guestKey: newToken() },
+  });
 }
