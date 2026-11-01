@@ -7,11 +7,14 @@ import { HostLinks } from "@/components/party/host-links";
 import { NeedsSection } from "@/components/party/needs-section";
 import { PartyDetails } from "@/components/party/party-details";
 import { PartyTitle } from "@/components/party/party-title";
+import { ShareNeeded } from "@/components/party/share-needed";
+import { SplitCosts } from "@/components/party/split-costs";
 import { ThemeFrame } from "@/components/party/theme-frame";
 import { SiteFooter } from "@/components/site/site-footer";
 import { SiteHeader } from "@/components/site/site-header";
 import { Shell } from "@/components/ui/shell";
 import { site } from "@/config/site";
+import { formatPartyWhen } from "@/lib/party-format";
 import { readDeviceToken } from "@/lib/server/device";
 import { listNeeds } from "@/lib/server/needs";
 import { getPartyAccess } from "@/lib/server/parties";
@@ -28,6 +31,7 @@ export default async function HostPage({ params }: PageProps<"/p/[slug]/host">) 
   const { party, hostToken } = access;
   const device = await readDeviceToken();
   const [needs, guests] = await Promise.all([listNeeds(party.id, device), listAttendees(party.id, device)]);
+  const when = formatPartyWhen(party.dateTime, party.timeZone);
 
   return (
     <ThemeFrame
@@ -42,8 +46,10 @@ export default async function HostPage({ params }: PageProps<"/p/[slug]/host">) 
           <NeedsSection n="04" slug={party.slug} needs={needs} isHost>
             <AddNeedForm slug={party.slug} />
           </NeedsSection>
+          <ShareNeeded n="05" slug={party.slug} title={party.title} day={when.day} time={when.time} needs={needs} />
           <PartyDetails
-            n="05"
+            n="06"
+            slug={party.slug}
             editHref={`/p/${party.slug}/host/edit`}
             dateTime={party.dateTime}
             timeZone={party.timeZone}
@@ -51,6 +57,7 @@ export default async function HostPage({ params }: PageProps<"/p/[slug]/host">) 
             address={party.address}
             notes={party.notes}
           />
+          <SplitCosts n="07" isHost />
         </main>
         <SiteFooter />
       </Shell>

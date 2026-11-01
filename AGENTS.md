@@ -195,6 +195,14 @@ who brings what. Milestones M1 to M4 (see README).
   edit, so shared links keep working.
 - Changing the guest password also replaces `guestKey`, signing every guest
   out. The host cookie is separate and stays valid.
+- `.ics` text follows RFC 5545 (`src/lib/ics.ts`): TEXT escaping, CRLF, lines
+  folded at 75 UTF-8 bytes without splitting characters. Parties have no end
+  time, so DTEND is start + 3 hours.
+- The "Nudge the group" share text (`src/lib/share-text.ts`, host page) lists
+  only open items, in category order, with what's left. It never includes the
+  password (we only store its hash); the host shares that separately.
+- Cost splitting is a link to TabMath (`site.tabMath` in `src/config/site.ts`,
+  with utm params). Potluck never handles money.
 
 ### Themes (documented exception to "never hard-code a color")
 
@@ -230,6 +238,8 @@ who brings what. Milestones M1 to M4 (see README).
   `DELETE /api/parties/[slug]/rsvps/[rsvpId]` (own device, or any for the host)
 - Host: `PATCH /api/parties/[slug]/host` (details + theme),
   `POST /api/parties/[slug]/host/password` (new password, signs guests out)
+- Calendar (guest or host): `GET /api/parties/[slug]/calendar.ics`, one
+  VEVENT in UTC, 3-hour default length, generic `party.ics` file name
 
 ### Analytics events
 
@@ -237,4 +247,5 @@ who brings what. Milestones M1 to M4 (see README).
 `need_added { category, quantity, has_unit, has_note }`, `need_deleted { had_claims }`,
 `item_claimed { outcome, quantity?, filled? }`, `claim_removed { by }`,
 `rsvp_sent { status, party_size, changed }`, `rsvp_removed { by }`,
-`party_edited { theme_changed, time_changed, theme }`, `password_changed`.
+`party_edited { theme_changed, time_changed, theme }`, `password_changed`,
+`calendar_downloaded`, `share_text_used { method, items_left }`, `tabmath_clicked { from }`.

@@ -5,6 +5,14 @@ export const site = {
   description: "One page for your party: when, where, and who brings what. No login.",
   /** Shown in the footer. Keep it short. */
   tagline: "Tiny tools for keeping things fair.",
+  /**
+   * Link-out for splitting party costs (M4). Potluck never handles money; the
+   * utm params let TabMath's analytics see where people came from.
+   */
+  tabMath: {
+    name: "TabMath",
+    url: "https://tabmath.com/?utm_source=potluck&utm_medium=party_page",
+  },
   /** Footer credit link. */
   author: { name: "Andrea", url: "https://andreaberrocal.com" },
   /** Browser UI color. Paper white keeps the monochrome look. */
