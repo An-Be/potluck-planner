@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { SectionLabel } from "@/components/ui/section-label";
 import { formatPartyWhen, mapsUrl } from "@/lib/party-format";
 import type { PartyDetails as Details } from "@/lib/server/parties";
@@ -5,12 +6,31 @@ import type { PartyDetails as Details } from "@/lib/server/parties";
 type Props = Pick<Details, "dateTime" | "timeZone" | "location" | "address" | "notes">;
 
 /** When, where, notes: the questions nobody should have to text the host about. */
-export function PartyDetails({ n = "01", dateTime, timeZone, location, address, notes }: Props & { n?: string }) {
+export function PartyDetails({
+  n = "01",
+  editHref,
+  dateTime,
+  timeZone,
+  location,
+  address,
+  notes,
+}: Props & { n?: string; editHref?: string }) {
   const when = formatPartyWhen(dateTime, timeZone);
   const map = mapsUrl(location, address);
   return (
     <section>
-      <SectionLabel n={n}>Details</SectionLabel>
+      <SectionLabel
+        n={n}
+        aside={
+          editHref ? (
+            <Link href={editHref} className="text-(--theme-accent) underline underline-offset-4">
+              Edit
+            </Link>
+          ) : undefined
+        }
+      >
+        Details
+      </SectionLabel>
       <dl className="flex flex-col border border-ink bg-paper">
         <div className="flex flex-col gap-1 border-b border-ink p-4">
           <dt className="label text-mute">When</dt>

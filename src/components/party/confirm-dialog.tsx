@@ -27,7 +27,7 @@ export function ConfirmDialog({
           Cancel
         </Button>
         <Button block disabled={pending} onClick={() => request?.run()}>
-          {pending ? "Removing" : request?.confirmLabel}
+          {pending ? "Working" : request?.confirmLabel}
         </Button>
       </div>
     </Dialog>

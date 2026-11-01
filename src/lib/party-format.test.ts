@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { formatPartyWhen, localInputToIso, mapsUrl } from "./party-format";
+import { formatPartyWhen, fromZonedInput, localInputToIso, mapsUrl, toZonedInput } from "./party-format";
 
 describe("formatPartyWhen", () => {
   it("formats in the party's time zone, not the server's", () => {
@@ -28,5 +28,37 @@ describe("localInputToIso", () => {
   });
   it("returns an ISO instant", () => {
     expect(localInputToIso("2026-12-19T19:00")).toMatch(/^2026-12-\d\dT\d\d:00:00\.000Z$/);
+  });
+});
+
+describe("zoned input conversion", () => {
+  it("shows the instant as wall clock in the party's zone", () => {
+    const d = new Date("2026-12-20T01:00:00.000Z");
+    expect(toZonedInput(d, "America/Chicago")).toBe("2026-12-19T19:00");
+    expect(toZonedInput(d, "Asia/Tokyo")).toBe("2026-12-20T10:00");
+  });
+
+  it("round-trips, including summer time and half-hour zones", () => {
+    for (const [value, tz] of [
+      ["2026-12-19T19:00", "America/Chicago"],
+      ["2026-07-04T18:30", "America/Chicago"],
+      ["2026-12-31T23:59", "Asia/Kolkata"],
+      ["2026-06-01T00:00", "Europe/London"],
+    ] as const) {
+      const d = fromZonedInput(value, tz);
+      expect(d, value).not.toBeNull();
+      if (d) expect(toZonedInput(d, tz)).toBe(value);
+    }
+  });
+
+  it("converts to the right instant", () => {
+    expect(fromZonedInput("2026-12-19T19:00", "America/Chicago")?.toISOString()).toBe("2026-12-20T01:00:00.000Z");
+    expect(fromZonedInput("2026-07-04T18:30", "America/Chicago")?.toISOString()).toBe("2026-07-04T23:30:00.000Z");
+  });
+
+  it("rejects malformed values", () => {
+    expect(fromZonedInput("", "America/Chicago")).toBeNull();
+    expect(fromZonedInput("2026-12-19 19:00", "America/Chicago")).toBeNull();
+    expect(fromZonedInput("tomorrow", "America/Chicago")).toBeNull();
   });
 });

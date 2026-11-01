@@ -17,7 +17,7 @@ export type ThemeColors = {
   art: string;
 };
 
-export type HeaderArt = "none" | "garland";
+export type HeaderArt = "none" | "garland" | "snowflakes" | "confetti" | "knit";
 
 export type Theme = {
   slug: string;
@@ -26,8 +26,25 @@ export type Theme = {
   blurb: string;
   emoji: string;
   art: HeaderArt;
+  /**
+   * "dark" keeps the page dark even when the device is in light mode, by
+   * re-pointing the base tokens (ink, paper...) to their dark values inside
+   * this theme's scope only. globals.css itself is never touched.
+   */
+  scheme?: "dark";
   light: ThemeColors;
   dark: ThemeColors;
+};
+
+// Mirrors the dark block in src/app/globals.css. Used only by `scheme: "dark"` themes.
+const darkTokens: Record<string, string> = {
+  "--color-ink": "#f2f2f2",
+  "--color-paper": "#0b0b0b",
+  "--color-mute": "#a6a6a6",
+  "--color-faint": "#767676",
+  "--color-wash": "#1c1c1c",
+  "--color-rule": "#262626",
+  "--color-line": "#f2f2f2",
 };
 
 const base: ThemeColors = {
@@ -46,6 +63,34 @@ export const themes = [
     art: "garland",
     light: { accent: "#a3182b", onAccent: "#ffffff", tint: "#e8f0e9", art: "#b08a24" },
     dark: { accent: "#e0525f", onAccent: "#0b0b0b", tint: "#0d1712", art: "#d8b24c" },
+  },
+  {
+    slug: "winter-wonderland",
+    name: "Winter Wonderland",
+    blurb: "Icy blue, falling snowflakes, a pale frost.",
+    emoji: "❄️",
+    art: "snowflakes",
+    light: { accent: "#1d5c94", onAccent: "#ffffff", tint: "#e7f0f8", art: "#7fb0d8" },
+    dark: { accent: "#8cc4f2", onAccent: "#0b0b0b", tint: "#0b1520", art: "#b9dcf5" },
+  },
+  {
+    slug: "new-years-eve",
+    name: "New Year's Eve",
+    blurb: "Black and gold with confetti. Always dark.",
+    emoji: "✨",
+    art: "confetti",
+    scheme: "dark",
+    light: { accent: "#d9b44a", onAccent: "#0b0b0b", tint: "#14110a", art: "#f2d27a" },
+    dark: { accent: "#d9b44a", onAccent: "#0b0b0b", tint: "#14110a", art: "#f2d27a" },
+  },
+  {
+    slug: "cozy-cabin",
+    name: "Cozy Cabin",
+    blurb: "Warm amber, a knit band, cream like cocoa.",
+    emoji: "🕯️",
+    art: "knit",
+    light: { accent: "#9e540a", onAccent: "#ffffff", tint: "#f6efe2", art: "#7a4a2a" },
+    dark: { accent: "#f0a24a", onAccent: "#0b0b0b", tint: "#1a130c", art: "#c9905e" },
   },
   {
     slug: "plain",
@@ -86,12 +131,27 @@ function declarations(c: ThemeColors): string {
 
 /**
  * The CSS for one theme, scoped to `[data-theme="<slug>"]`, with the dark
- * values under prefers-color-scheme like the base tokens. Rendered into a
- * nonce'd <style> tag (inline style attributes are blocked by the CSP).
+ * values under prefers-color-scheme like the base tokens.
  */
 export function themeCss(theme: Theme): string {
-  const all = [theme.light, theme.dark].flatMap((c) => Object.values(c));
+  const forced = theme.scheme === "dark" ? Object.values(darkTokens) : [];
+  const all = [theme.light, theme.dark].flatMap((c) => Object.values(c)).concat(forced);
   if (!all.every(isSafeColor)) throw new Error(`Theme ${theme.slug} has an unsafe color value.`);
   const sel = `[data-theme="${theme.slug}"]`;
+  if (theme.scheme === "dark") {
+    const tokens = Object.entries(darkTokens).map(([k, v]) => `${k}:${v}`).join(";");
+    // Same values in both modes; color-scheme makes native inputs dark too.
+    return `${sel}{color-scheme:dark;color:var(--color-ink);${tokens};${declarations(theme.dark)}}`;
+  }
   return `${sel}{${declarations(theme.light)}}@media (prefers-color-scheme: dark){${sel}{${declarations(theme.dark)}}}`;
+}
+
+/**
+ * Every theme's CSS in one sheet, served as /themes.css (src/app/themes.css).
+ * A same-origin stylesheet instead of a nonce'd <style> tag: a client-side
+ * navigation brings a new request nonce that the page's CSP doesn't know, so
+ * a <style> rendered during navigation would be blocked.
+ */
+export function allThemesCss(): string {
+  return themes.map(themeCss).join("\n");
 }

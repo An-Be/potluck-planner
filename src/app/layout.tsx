@@ -5,6 +5,7 @@ import { GeistMono } from "geist/font/mono";
 import { connection } from "next/server";
 import { Toaster } from "@/components/ui/toaster";
 import { site } from "@/config/site";
+import { themesStylesheetHref } from "@/lib/server/themes-stylesheet";
 import "./globals.css";
 
 // Fonts are bundled locally so builds never depend on Google Fonts being reachable.
@@ -37,6 +38,8 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
   return (
     <html lang="en" className={`${spaceGrotesk.variable} ${GeistMono.variable}`}>
       <body className="flex min-h-dvh flex-col">
+        {/* Party themes (src/lib/themes.ts). React hoists this into <head>. */}
+        <link rel="stylesheet" href={themesStylesheetHref} precedence="themes" />
         {children}
         <Toaster />
       </body>
