@@ -9,6 +9,7 @@ import { toast } from "@/lib/toast";
 import { track } from "@/lib/track";
 import { ClaimDialog, type ClaimDraft } from "./claim-dialog";
 import { ConfirmDialog, type ConfirmRequest } from "./confirm-dialog";
+import { EditNeedDialog, type NeedEdit } from "./edit-need-dialog";
 import { NeedRow } from "./need-row";
 
 /**
@@ -21,11 +22,14 @@ export function NeedsBoard({ slug, needs, isHost }: { slug: string; needs: NeedV
   const [claimForId, setClaimForId] = useState<string | null>(null);
   const [claimError, setClaimError] = useState<string | null>(null);
   const [confirm, setConfirm] = useState<ConfirmRequest | null>(null);
+  const [editId, setEditId] = useState<string | null>(null);
+  const [editError, setEditError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
 
   // Derived from the latest props, so a refresh while the dialog is open
   // updates what's left.
   const claimFor = needs.find((n) => n.id === claimForId) ?? null;
+  const editing = needs.find((n) => n.id === editId) ?? null;
   const groups = groupNeeds(needs);
 
   function openClaim(need: NeedView) {
@@ -96,6 +100,40 @@ export function NeedsBoard({ slug, needs, isHost }: { slug: string; needs: NeedV
     });
   }
 
+  function openEdit(need: NeedView) {
+    setEditError(null);
+    setEditId(need.id);
+  }
+
+  async function submitEdit(edit: NeedEdit) {
+    if (!editing || pending) return;
+    setPending(true);
+    setEditError(null);
+    const res = await api<{ ok: true }>(`/api/parties/${slug}/needs/${editing.id}`, { method: "PATCH", body: edit });
+    setPending(false);
+    if (!res.ok) {
+      if (res.status === 404) {
+        setEditId(null);
+        toast.error("That item was just removed.");
+        router.refresh();
+        return;
+      }
+      // 409: a guest claimed more while the dialog was open. Refresh so the
+      // dialog's "already claimed" hint shows the new number.
+      if (res.status === 409) router.refresh();
+      setEditError(res.error);
+      return;
+    }
+    track("need_edited", {
+      quantity_changed: edit.quantityNeeded !== editing.quantityNeeded,
+      category_changed: edit.category !== editing.category,
+      had_claims: editing.claims.length > 0,
+    });
+    toast("Saved.");
+    setEditId(null);
+    router.refresh();
+  }
+
   function askDeleteNeed(need: NeedView) {
     const people = need.claims.length;
     setConfirm({
@@ -145,6 +183,7 @@ export function NeedsBoard({ slug, needs, isHost }: { slug: string; needs: NeedV
                   busy={pending}
                   onBring={openClaim}
                   onRemoveClaim={askRemoveClaim}
+                  onEdit={openEdit}
                   onDelete={askDeleteNeed}
                 />
               ))}
@@ -160,6 +199,16 @@ export function NeedsBoard({ slug, needs, isHost }: { slug: string; needs: NeedV
         onClose={() => setClaimForId(null)}
         onSubmit={submitClaim}
       />
+      {isHost ? (
+        <EditNeedDialog
+          key={editing?.id ?? "closed"}
+          need={editing}
+          error={editError}
+          pending={pending}
+          onClose={() => setEditId(null)}
+          onSubmit={submitEdit}
+        />
+      ) : null}
       <ConfirmDialog request={confirm} pending={pending} onClose={() => setConfirm(null)} />
     </>
   );

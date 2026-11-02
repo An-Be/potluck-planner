@@ -45,6 +45,31 @@ export async function addNeed(partyId: string, input: AddNeedInput): Promise<Add
   return { ok: true, id: need.id };
 }
 
+export type UpdateNeedResult =
+  | { ok: true }
+  | { ok: false; reason: "missing" }
+  | { ok: false; reason: "below_claimed"; claimed: number };
+
+/**
+ * Host edit of an item. The quantity can't drop below what guests already
+ * claimed: that would leave the item over-claimed. The row is locked like in
+ * claimNeed, so a claim landing at the same moment is counted before the check.
+ */
+export async function updateNeed(partyId: string, needId: string, input: AddNeedInput): Promise<UpdateNeedResult> {
+  return db.$transaction(async (tx) => {
+    const locked = await tx.$queryRaw<{ id: string }[]>`
+      SELECT "id" FROM "Need" WHERE "id" = ${needId} AND "partyId" = ${partyId} FOR UPDATE`;
+    if (locked.length === 0) return { ok: false, reason: "missing" } as const;
+
+    const agg = await tx.claim.aggregate({ where: { needId }, _sum: { quantity: true } });
+    const claimed = agg._sum.quantity ?? 0;
+    if (input.quantityNeeded < claimed) return { ok: false, reason: "below_claimed", claimed } as const;
+
+    await tx.need.update({ where: { id: needId }, data: input });
+    return { ok: true } as const;
+  });
+}
+
 /** Deletes the need and (by cascade) its claims. False when it isn't this party's. */
 export async function deleteNeed(partyId: string, needId: string): Promise<boolean> {
   const { count } = await db.need.deleteMany({ where: { id: needId, partyId } });

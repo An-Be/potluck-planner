@@ -11,11 +11,12 @@ type Props = {
   busy: boolean;
   onBring: (need: NeedView) => void;
   onRemoveClaim: (need: NeedView, claim: ClaimView) => void;
+  onEdit: (need: NeedView) => void;
   onDelete: (need: NeedView) => void;
 };
 
 /** One item: what it is, claimed/needed, who's bringing it, and what you can do about it. */
-export function NeedRow({ need, isHost, busy, onBring, onRemoveClaim, onDelete }: Props) {
+export function NeedRow({ need, isHost, busy, onBring, onRemoveClaim, onEdit, onDelete }: Props) {
   const claimed = claimedCount(need);
   const left = remaining(need);
   const covered = left === 0;
@@ -72,9 +73,28 @@ export function NeedRow({ need, isHost, busy, onBring, onRemoveClaim, onDelete }
             <span />
           )}
           {isHost ? (
-            <Button variant="ghost" size="sm" className="h-auto px-0" disabled={busy} onClick={() => onDelete(need)}>
-              Delete item
-            </Button>
+            <span className="flex items-center gap-4">
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-auto px-0"
+                disabled={busy}
+                onClick={() => onEdit(need)}
+                aria-label={`Edit ${need.item}`}
+              >
+                Edit
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-auto px-0"
+                disabled={busy}
+                onClick={() => onDelete(need)}
+                aria-label={`Delete ${need.item}`}
+              >
+                Delete
+              </Button>
+            </span>
           ) : null}
         </div>
       ) : null}
