@@ -182,6 +182,10 @@ who brings what. Milestones M1 to M4 (see README).
 - "Mine" is a per-device httpOnly cookie `pdev` (`src/lib/server/device.ts`),
   set on first claim. It lets a phone remove its own claims; it is not access
   control and never leaves the server (`listNeeds` turns it into `mine`).
+- Host edits of an item (`updateNeed`) lock the Need row like `claimNeed`,
+  so the quantity can never drop below what's claimed, even with a claim
+  landing at the same moment. The add form and edit dialog share
+  `NeedFields`.
 - Progress counts items, not quantities: an item is covered when claims reach
   `quantityNeeded`. Max 100 needs per party.
 - The guest view looks the same for everyone, host included; host-only actions
@@ -237,6 +241,8 @@ who brings what. Milestones M1 to M4 (see README).
 - API: `POST /api/parties`, `GET /api/parties/[slug]` (guest-scoped),
   `POST /api/parties/[slug]/unlock`
 - Needs (host only): `POST /api/parties/[slug]/needs`,
+  `PATCH /api/parties/[slug]/needs/[needId]` (edit; 409 with `claimed` if the
+  quantity would drop below what's claimed),
   `DELETE /api/parties/[slug]/needs/[needId]` (cascades its claims)
 - Claims (guest or host): `POST /api/parties/[slug]/claims` (409 with
   `remaining` when someone got there first), `DELETE /api/parties/[slug]/claims/[claimId]`
@@ -251,7 +257,7 @@ who brings what. Milestones M1 to M4 (see README).
 ### Analytics events
 
 `party_created { theme, has_address, has_notes }`, `party_unlocked { outcome }`,
-`need_added { category, quantity, has_unit, has_note }`, `need_deleted { had_claims }`,
+`need_added { category, quantity, has_unit, has_note }`, `need_edited { quantity_changed, category_changed, had_claims }`, `need_deleted { had_claims }`,
 `item_claimed { outcome, quantity?, filled? }`, `claim_removed { by }`,
 `rsvp_sent { status, party_size, changed, host }`, `rsvp_removed { by }`,
 `party_edited { theme_changed, time_changed, theme }`, `password_changed`,
